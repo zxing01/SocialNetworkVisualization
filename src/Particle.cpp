@@ -2,7 +2,7 @@
 //  Particle.cpp
 //  SocialNetworkVisualization
 //
-//  Created by Zhi Xing on 4/20/15.
+//  Created by Lu Han, Zilong Jiao and Zhi Xing on 4/20/15.
 //
 //
 
