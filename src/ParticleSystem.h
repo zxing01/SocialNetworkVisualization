@@ -10,6 +10,7 @@
 #define __SocialNetworkVisualization__ParticleSystem__
 
 #include <iostream>
+#include "Parameters.h"
 #include "Particle.h"
 #include <vector>
 

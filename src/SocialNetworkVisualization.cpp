@@ -21,10 +21,10 @@ void SocialNetworkVisualization::setup()
             Particle *center = createParticleForUser(name, p1);
             
             cout << name << endl;
-            cout << "  id: " << center->info["id"] << endl;
-            cout << "  name: " << center->info["name"] << endl;
-            cout << "  friends count: " << center->info["friends_count"] << endl;
-            cout << "  followers count: " << center->info["followers_count"] << endl;
+            cout << "  id: " << center->_info["id"] << endl;
+            cout << "  name: " << center->_info["name"] << endl;
+            cout << "  friends count: " << center->_info["friends_count"] << endl;
+            cout << "  followers count: " << center->_info["followers_count"] << endl;
             
             redisReply *listReply = (redisReply*)redisCommand(redis,"LRANGE %s 0 -1", ("list@" + name).c_str());
             if (listReply->type == REDIS_REPLY_ARRAY) {
@@ -36,10 +36,10 @@ void SocialNetworkVisualization::setup()
                     mLinks.push_back(make_pair(center, neighbor));
                     
                     cout << nameOfNeighbor << endl;
-                    cout << "  id: " << neighbor->info["id"] << endl;
-                    cout << "  name: " << neighbor->info["name"] << endl;
-                    cout << "  friends count: " << neighbor->info["friends_count"] << endl;
-                    cout << "  followers count: " << neighbor->info["followers_count"] << endl;
+                    cout << "  id: " << neighbor->_info["id"] << endl;
+                    cout << "  name: " << neighbor->_info["name"] << endl;
+                    cout << "  friends count: " << neighbor->_info["friends_count"] << endl;
+                    cout << "  followers count: " << neighbor->_info["followers_count"] << endl;
                     
                     p2.rotate(2 * M_PI / listReply->elements);
                 }
@@ -51,95 +51,71 @@ void SocialNetworkVisualization::setup()
     freeReplyObject(keyReply);
 }
 
-void SocialNetworkVisualization::keyDown(KeyEvent event)
-{
-    //float windowX = getWindowPosX();
-    if(event.getCode() == KeyEvent::KEY_SPACE)
-    {
-        for(int i = 0; i < 5; i++)
-        {
-            //            float x = windowX;
-            Vec2f pos = getWindowCenter();
-            //float y = ci::randFloat((float)getWindowPosY(),(float)(getWindowPosY()+ getWindowHeight()));
-            //float y = getWindowPosY();
-            Particle *particle = new Particle(pos, NODE_SIZE, NODE_MASS, NODE_DRAG);
-            mParticleSystem.addParticle(particle);
-            
-        }
-        
-    }
-}
-void SocialNetworkVisualization::mouseMove(MouseEvent event)
-{
-    //    attrPosition.x = event.getPos().x;
-    //    attrPosition.y = event.getPos().y;
-}
 
-void SocialNetworkVisualization::mouseDown( MouseEvent event )
-{
+void SocialNetworkVisualization::mouseDown( MouseEvent event ){
+    float minDist = 20.f;
     mIsHandle = false;
-    float maxDist = 20.f;
-    float minDist = maxDist;
-    for( std::vector<Particle*>::iterator it = mParticleSystem.
-        particles.begin(); it != mParticleSystem.particles.end(); ++it )
-    {
-        float dist = (*it)->_currPosition.distance( event.getPos() );
-        if(dist<maxDist&&dist<minDist) {
-            mHandle = (*it);
+    for(auto it = mParticleSystem.particles.begin(); it != mParticleSystem.particles.end(); ++it) {
+        float dist = (*it)->_currPosition.distance(event.getPos());
+        if(dist < minDist) {
             mIsHandle = true;
             minDist = dist;
+            
+            if (mIsHandle && mHandle) {
+                mHandle->deselected();
+            }
+            
+            mHandle = (*it);
+            mHandle->selected();
         }
     }
 }
 
 void SocialNetworkVisualization::mouseUp(MouseEvent event){
     mIsHandle = false;
+    for(auto it = mParticleSystem.particles.begin(); it != mParticleSystem.particles.end(); ++it) {
+        (*it)->deselected();
+    }
 }
 
-void SocialNetworkVisualization::update()
-{
-    for( std::vector<Particle*>::iterator it1 = mParticleSystem.particles.begin();
-        it1 != mParticleSystem.particles.end();++it1)
-    {
-        for( std::vector<Particle*>::iterator it2 = mParticleSystem.particles.begin();
-            it2 != mParticleSystem.particles.end(); ++it2 )
-        {
+void SocialNetworkVisualization::update() {
+    // calculate replusion
+    for(auto it1 = mParticleSystem.particles.begin(); it1 != mParticleSystem.particles.end(); ++it1) {
+        for(auto it2 = mParticleSystem.particles.begin(); it2 != mParticleSystem.particles.end(); ++it2) {
             Vec2f conVec = (*it2)->_currPosition - (*it1)->_currPosition;
-            if(conVec.length() <0.1f)continue;
+            if(conVec.length() < 0.1f)
+                continue;
             float distance = conVec.length();
             conVec.normalize();
-            float force = (EDGE_LEN*2.0f - distance)* -0.1f;
+            float force = (distance - EDGE_LEN * 2.0f) * 0.1f;
             force = math<float>::min(0.f, force);
-            (*it1)->_forces += conVec * force*0.5f;
-            (*it2)->_forces += -conVec * force*0.5f;
+            (*it1)->_forces += conVec * force * 0.5f * (*it2)->_forceFactor;
+            (*it2)->_forces += -conVec * force * 0.5f * (*it1)->_forceFactor;
         }
     }
-    for( vector<pair<Particle*, Particle*> > ::iterator it = mLinks.begin(); it != mLinks.end(); ++it )
-    {
+    // calculate attraction
+    for(auto it = mLinks.begin(); it != mLinks.end(); ++it ) {
         Vec2f conVec = it->second->_currPosition - it->first->_currPosition;
         float distance = conVec.length();
         float diff = (distance-EDGE_LEN)/distance;
-        it->first->_forces += conVec * 0.5f*diff;
-        it->second->_forces -= conVec * 0.5f*diff;
+        it->first->_forces += conVec * 0.5f * diff;
+        it->second->_forces -= conVec * 0.5f * diff;
     }
-    if(mIsHandle)
-    {
+    if(mIsHandle) {
         mHandle->_currPosition = getMousePos() - getWindowPos();
         mHandle->_forces = Vec2f::zero();
     }
     mParticleSystem.update();
 }
 
-void SocialNetworkVisualization::draw()
-{
+void SocialNetworkVisualization::draw() {
     // clear out the window with black
     gl::enableAlphaBlending();
     gl::clear( Color::white() );
     gl::setViewport(getWindowBounds());
     gl::setMatricesWindow( getWindowWidth(), getWindowHeight() );
     gl::color( ColorA(0.f,0.f,0.f, 0.8f) );
-    for( vector<pair<Particle*, Particle*> > ::iterator it = mLinks.begin(); it != mLinks.end(); ++it )
-    {
+    for(auto it = mLinks.begin(); it != mLinks.end(); ++it) {
         Vec2f conVec = it->second->_currPosition - it->first->_currPosition;
         conVec.normalize();
         
@@ -177,7 +153,7 @@ Particle *SocialNetworkVisualization::createParticleForUser(string name, Vec2f p
         mParticleSystem.addParticle(particle);
         map[name] = particle;
     }
-    particle->info = getInfoForUser(name);
+    particle->_info = getInfoForUser(name);
     return particle;
 }
 

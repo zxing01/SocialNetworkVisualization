@@ -12,6 +12,7 @@
 #include <unordered_map>
 #include "cinder/Vector.h"
 #include "cinder/gl/gl.h"
+#include "Parameters.h"
 
 using namespace std;
 
@@ -22,13 +23,18 @@ public:
     void update();
     void draw();
     
+    void selected();
+    void deselected();
+    
     ci::Vec2f _currPosition;
     ci::Vec2f _prevPosition;
     ci::Vec2f _forces;
     float _radius;
     float _mass;
     float _drag;
-    unordered_map<string, string> info;
+    unordered_map<string, string> _info;
+    bool _selected;
+    int _forceFactor;
 };
 
 #endif /* defined(__SocialNetworkVisualization__Particle__) */
