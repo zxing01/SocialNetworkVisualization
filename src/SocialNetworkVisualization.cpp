@@ -1,3 +1,11 @@
+//
+//  SocialNetworkVisualization.cpp
+//  SocialNetworkVisualization
+//
+//  Created by Lu Han, Zilong Jiao and Zhi Xing on 4/20/15.
+//
+//
+
 #include "SocialNetworkVisualization.h"
 #include "cinder/ImageIo.h"
 #include "cinder/gl/Texture.h"
