@@ -16,6 +16,8 @@
 		3D3013FF1AE5AD3700EE3385 /* ParticleSystem.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3D3013FD1AE5AD3700EE3385 /* ParticleSystem.cpp */; };
 		3D3014031AE5AFC300EE3385 /* libhiredis.0.12.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 3D3014021AE5AFC300EE3385 /* libhiredis.0.12.dylib */; };
 		3D3014051AE5B33B00EE3385 /* SocialNetworkVisualization.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3D3014041AE5B33B00EE3385 /* SocialNetworkVisualization.cpp */; };
+		3DC1466B1AF2FC48004502D8 /* Cpp11-BlockingQueue.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3DC146691AF2FC48004502D8 /* Cpp11-BlockingQueue.cpp */; };
+		3DC1466D1AF32C93004502D8 /* libcurl.4.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 3DC1466C1AF32C93004502D8 /* libcurl.4.dylib */; };
 		5323E6B20EAFCA74003A9687 /* CoreVideo.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5323E6B10EAFCA74003A9687 /* CoreVideo.framework */; };
 		5323E6B60EAFCA7E003A9687 /* QTKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5323E6B50EAFCA7E003A9687 /* QTKit.framework */; };
 		593F9D250D6941C09CEE0B32 /* CinderApp.icns in Resources */ = {isa = PBXBuildFile; fileRef = CF103980187A4DE9B1EA5D97 /* CinderApp.icns */; };
@@ -40,6 +42,9 @@
 		3D3014021AE5AFC300EE3385 /* libhiredis.0.12.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libhiredis.0.12.dylib; path = ../../../../../../../../../usr/local/lib/libhiredis.0.12.dylib; sourceTree = "<group>"; };
 		3D3014041AE5B33B00EE3385 /* SocialNetworkVisualization.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = SocialNetworkVisualization.cpp; path = ../src/SocialNetworkVisualization.cpp; sourceTree = "<group>"; };
 		3D4C9AB41AE6EC2A002BA1E8 /* Parameters.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = Parameters.h; path = ../src/Parameters.h; sourceTree = "<group>"; };
+		3DC146691AF2FC48004502D8 /* Cpp11-BlockingQueue.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = "Cpp11-BlockingQueue.cpp"; path = "../src/Cpp11-BlockingQueue.cpp"; sourceTree = "<group>"; };
+		3DC1466A1AF2FC48004502D8 /* Cpp11-BlockingQueue.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = "Cpp11-BlockingQueue.h"; path = "../src/Cpp11-BlockingQueue.h"; sourceTree = "<group>"; };
+		3DC1466C1AF32C93004502D8 /* libcurl.4.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libcurl.4.dylib; path = usr/lib/libcurl.4.dylib; sourceTree = SDKROOT; };
 		5323E6B10EAFCA74003A9687 /* CoreVideo.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreVideo.framework; path = /System/Library/Frameworks/CoreVideo.framework; sourceTree = "<absolute>"; };
 		5323E6B50EAFCA7E003A9687 /* QTKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = QTKit.framework; path = /System/Library/Frameworks/QTKit.framework; sourceTree = "<absolute>"; };
 		8D1107320486CEB800E47090 /* SocialNetworkVisualization.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SocialNetworkVisualization.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -53,6 +58,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				3DC1466D1AF32C93004502D8 /* libcurl.4.dylib in Frameworks */,
 				3D3014031AE5AFC300EE3385 /* libhiredis.0.12.dylib in Frameworks */,
 				8D11072F0486CEB800E47090 /* Cocoa.framework in Frameworks */,
 				0091D8F90E81B9330029341E /* OpenGL.framework in Frameworks */,
@@ -81,6 +87,7 @@
 				3D3013FA1AE5AD0D00EE3385 /* Particle.cpp */,
 				3D3013FD1AE5AD3700EE3385 /* ParticleSystem.cpp */,
 				3D3014041AE5B33B00EE3385 /* SocialNetworkVisualization.cpp */,
+				3DC146691AF2FC48004502D8 /* Cpp11-BlockingQueue.cpp */,
 			);
 			name = Source;
 			sourceTree = "<group>";
@@ -139,6 +146,7 @@
 				3D3013FB1AE5AD0D00EE3385 /* Particle.h */,
 				3D3013FE1AE5AD3700EE3385 /* ParticleSystem.h */,
 				3D3014011AE5AD6A00EE3385 /* SocialNetworkVisualization.h */,
+				3DC1466A1AF2FC48004502D8 /* Cpp11-BlockingQueue.h */,
 			);
 			name = Headers;
 			sourceTree = "<group>";
@@ -155,6 +163,7 @@
 		29B97323FDCFA39411CA2CEA /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				3DC1466C1AF32C93004502D8 /* libcurl.4.dylib */,
 				3D3014021AE5AFC300EE3385 /* libhiredis.0.12.dylib */,
 				1058C7A0FEA54F0111CA2CBB /* Linked Frameworks */,
 				1058C7A2FEA54F0111CA2CBB /* Other Frameworks */,
@@ -226,6 +235,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				3DC1466B1AF2FC48004502D8 /* Cpp11-BlockingQueue.cpp in Sources */,
 				3D3013FC1AE5AD0D00EE3385 /* Particle.cpp in Sources */,
 				3D3014051AE5B33B00EE3385 /* SocialNetworkVisualization.cpp in Sources */,
 				3D3013FF1AE5AD3700EE3385 /* ParticleSystem.cpp in Sources */,

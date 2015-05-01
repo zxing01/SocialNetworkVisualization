@@ -22,8 +22,9 @@ public:
     void draw();
     void addParticle(Particle* particle);
     void destroyParticle(Particle* particle);
-    
-    std::vector<Particle*> particles;
+    std::vector<Particle*>& particles();
+private:
+    std::vector<Particle*> _particles;
 };
 
 #endif /* defined(__SocialNetworkVisualization__ParticleSystem__) */

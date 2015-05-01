@@ -15,6 +15,8 @@
 #include "cinder/app/AppNative.h"
 #include "Parameters.h"
 #include "ParticleSystem.h"
+#include "cinder/params/Params.h"
+#include <vector>
 
 using namespace ci;
 using namespace ci::app;
@@ -27,21 +29,28 @@ public:
     void setup();
     void mouseDown(MouseEvent event );
     void mouseUp(MouseEvent event);
+    void keyDown(KeyEvent event);
     void update();
     void draw();
 
 private:
-    bool mIsHandle;
-    ParticleSystem mParticleSystem;
-    Particle* mHandle;
-    vector< pair<Particle*, Particle*> > mLinks;
-    unordered_map<string, Particle*> map;
-    
-    // redis related
-    redisContext *redis;
     void connectRedis();
+    void redisUpdate(string name);
+    void userUpdate();
+    void issueUpdate();
+    void redisFlush();
     Particle *createParticleForUser(string key, Vec2f position);
     unordered_map<string, string> getInfoForUser(string key);
+    void createGui();
+    
+    bool mIsHandle;
+    Particle* mHandle;
+    ParticleSystem mParticleSystem;
+    vector< pair<Particle*, Particle*> > mLinks;
+    unordered_map<string, Particle*> map;
+    redisContext *redis;
+    params::InterfaceGlRef mParams;
+    string mSearchKey;
 };
 
 #endif

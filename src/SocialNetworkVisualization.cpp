@@ -1,4 +1,6 @@
 #include "SocialNetworkVisualization.h"
+#include "cinder/ImageIo.h"
+#include "cinder/gl/Texture.h"
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 // Destructor
@@ -9,121 +11,136 @@ SocialNetworkVisualization::~SocialNetworkVisualization() {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 // Download the adjacency list from the backend Redis database and save user info to Particles
-void SocialNetworkVisualization::setup()
-{
+void SocialNetworkVisualization::setup() {
+    vector<string> args = getArgs();
+    if (args.size() < 2)
+        cout << " Please give me a username.\n";
+    createGui();
     connectRedis();
-    redisReply *keyReply = (redisReply*)redisCommand(redis,"KEYS list@*");
-    if (keyReply->type == REDIS_REPLY_ARRAY) {
-        Vec2f p1 = getWindowCenter() + Vec2f::one() * 2.5 * EDGE_LEN;
-        
-        for (int i = 0; i < keyReply->elements; ++i) {
-            string name = string(keyReply->element[i]->str).substr(5);
-            Particle *center = createParticleForUser(name, p1);
-            
-            cout << name << endl;
-            cout << "  id: " << center->_info["id"] << endl;
-            cout << "  name: " << center->_info["name"] << endl;
-            cout << "  friends count: " << center->_info["friends_count"] << endl;
-            cout << "  followers count: " << center->_info["followers_count"] << endl;
-            
-            redisReply *listReply = (redisReply*)redisCommand(redis,"LRANGE %s 0 -1", ("list@" + name).c_str());
-            if (listReply->type == REDIS_REPLY_ARRAY) {
-                Vec2f p2 = center->_currPosition + Vec2f::one() * EDGE_LEN;
-                
-                for (int j = 0; j < listReply->elements; ++j) {
-                    string nameOfNeighbor = string(listReply->element[j]->str);
-                    Particle *neighbor = createParticleForUser(nameOfNeighbor, p2);
-                    mLinks.push_back(make_pair(center, neighbor));
-                    
-                    cout << nameOfNeighbor << endl;
-                    cout << "  id: " << neighbor->_info["id"] << endl;
-                    cout << "  name: " << neighbor->_info["name"] << endl;
-                    cout << "  friends count: " << neighbor->_info["friends_count"] << endl;
-                    cout << "  followers count: " << neighbor->_info["followers_count"] << endl;
-                    
-                    p2.rotate(2 * M_PI / listReply->elements);
-                }
-                freeReplyObject(listReply);
-                p1.rotate(2 * M_PI / keyReply->elements);
-            }
-        }
-    }
-    freeReplyObject(keyReply);
+    redisUpdate(args[1]);
 }
 
-
-void SocialNetworkVisualization::mouseDown( MouseEvent event ){
-    float minDist = 20.f;
-    mIsHandle = false;
-    for(auto it = mParticleSystem.particles.begin(); it != mParticleSystem.particles.end(); ++it) {
-        float dist = (*it)->_currPosition.distance(event.getPos());
-        if(dist < minDist) {
-            mIsHandle = true;
-            minDist = dist;
-            
-            if (mIsHandle && mHandle) {
-                mHandle->deselected();
-            }
-            
-            mHandle = (*it);
-            mHandle->selected();
-        }
-    }
-}
-
-void SocialNetworkVisualization::mouseUp(MouseEvent event){
-    mIsHandle = false;
-    for(auto it = mParticleSystem.particles.begin(); it != mParticleSystem.particles.end(); ++it) {
-        (*it)->deselected();
-    }
-}
-
+////////////////////////////////////////////////////////////////////////////////////////////////
+// Repeated update without rendering
 void SocialNetworkVisualization::update() {
+    userUpdate();
     // calculate replusion
-    for(auto it1 = mParticleSystem.particles.begin(); it1 != mParticleSystem.particles.end(); ++it1) {
-        for(auto it2 = mParticleSystem.particles.begin(); it2 != mParticleSystem.particles.end(); ++it2) {
-            Vec2f conVec = (*it2)->_currPosition - (*it1)->_currPosition;
+    for(auto it1 = mParticleSystem.particles().begin(); it1 != mParticleSystem.particles().end(); ++it1) {
+        for(auto it2 = mParticleSystem.particles().begin(); it2 != mParticleSystem.particles().end(); ++it2) {
+            Vec2f conVec = (*it2)->position() - (*it1)->position();
             if(conVec.length() < 0.1f)
                 continue;
             float distance = conVec.length();
-            conVec.normalize();
-            float force = (distance - EDGE_LEN * 2.0f) * 0.1f;
-            force = math<float>::min(0.f, force);
-            (*it1)->_forces += conVec * force * 0.5f * (*it2)->_forceFactor;
-            (*it2)->_forces += -conVec * force * 0.5f * (*it1)->_forceFactor;
+            float repulsionCoeff = (distance - EDGE_LEN * 2.0f) * 0.05f / distance / NODE_MASS;
+            repulsionCoeff = math<float>::min(0.f, repulsionCoeff);
+            (*it1)->force() += conVec * repulsionCoeff * (*it2)->mass();
+            (*it2)->force() += -conVec * repulsionCoeff * (*it1)->mass();
         }
     }
     // calculate attraction
     for(auto it = mLinks.begin(); it != mLinks.end(); ++it ) {
-        Vec2f conVec = it->second->_currPosition - it->first->_currPosition;
+        Vec2f conVec = it->second->position() - it->first->position();
         float distance = conVec.length();
-        float diff = (distance-EDGE_LEN)/distance;
-        it->first->_forces += conVec * 0.5f * diff;
-        it->second->_forces -= conVec * 0.5f * diff;
+        float attractionCoeff = (distance - EDGE_LEN) * 0.5f / distance;
+        it->first->force() += conVec * attractionCoeff;
+        it->second->force() += -conVec * attractionCoeff;
     }
+    
+    //th.join();
+    
     if(mIsHandle) {
-        mHandle->_currPosition = getMousePos() - getWindowPos();
-        mHandle->_forces = Vec2f::zero();
+        mHandle->position() = getMousePos() - getWindowPos();
+        mHandle->force() = Vec2f::zero();
     }
     mParticleSystem.update();
 }
 
+////////////////////////////////////////////////////////////////////////////////////////////////
+// The rendering function
 void SocialNetworkVisualization::draw() {
-    // clear out the window with black
+    // clear out the window with white
     gl::enableAlphaBlending();
-    gl::clear( Color::white() );
+    gl::clear(Color::white());
+    
     gl::setViewport(getWindowBounds());
     gl::setMatricesWindow( getWindowWidth(), getWindowHeight() );
-    gl::color( ColorA(0.f,0.f,0.f, 0.8f) );
+    gl::lineWidth(3.0f);
     for(auto it = mLinks.begin(); it != mLinks.end(); ++it) {
-        Vec2f conVec = it->second->_currPosition - it->first->_currPosition;
+        Vec2f conVec = it->second->position() - it->first->position();
         conVec.normalize();
         
-        gl::drawLine(it->first->_currPosition + conVec * ( it->first->_radius+2.f ),
-                     it->second->_currPosition - conVec * ( it->second->_radius+2.f ) );
+        gl::drawLine(it->first->position() + conVec * (it->first->radius() + 2.f),
+                     it->second->position() - conVec * (it->second->radius() + 2.f));
     }
-    gl::color( ci::ColorA(0.f,0.f,0.f, 0.8f) );
     mParticleSystem.draw();
+    mParams->draw();
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////
+// Handle mouse down events
+void SocialNetworkVisualization::mouseDown(MouseEvent event) {
+    float minDist = 20.f;
+    mIsHandle = false;
+    for(auto it = mParticleSystem.particles().begin(); it != mParticleSystem.particles().end(); ++it) {
+        float dist = (*it)->position().distance(event.getPos());
+        if(dist < minDist) {
+            minDist = dist;
+            mIsHandle = true;
+            mHandle = (*it);
+            Particle::selectParticle((*it));
+        }
+    }
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////
+// Handle mouse up events
+void SocialNetworkVisualization::mouseUp(MouseEvent event) {
+    mIsHandle = false;
+    Particle::selectParticle(nullptr);
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////
+// Handle key down events
+void SocialNetworkVisualization::keyDown(KeyEvent event) {
+    if(event.getCode() == KeyEvent::KEY_SPACE && mIsHandle == true) {
+        string username = mHandle->info()["screen_name"];
+        redisUpdate(username);
+    }
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////
+// Send update request to Redis
+void SocialNetworkVisualization::redisUpdate(string name) {
+    if(map.count(name) > 0)
+        map[name]->color() = ColorA(1.0f,0.0f,0.0f,0.8f);
+    
+    redisReply* updateReply = (redisReply*)redisCommand(redis, "RPUSH update@request %s", name.c_str());
+    freeReplyObject(updateReply);
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////
+// Collect requested user information from Redis
+void SocialNetworkVisualization::userUpdate() {
+    redisReply* userReply = (redisReply*)redisCommand(redis, "LPOP update@reply");
+    if (userReply->type == REDIS_REPLY_STRING) {
+        string name = string(userReply->str);
+        Particle *center = createParticleForUser(name, getWindowCenter() + Vec2f::one()); // particle disappear if just use getWindowCenter()
+        
+        redisReply *listReply = (redisReply*)redisCommand(redis,"LRANGE %s 0 -1", ("list@" + name).c_str());
+        if (listReply->type == REDIS_REPLY_ARRAY) {
+            Vec2f r = Vec2f::one() * EDGE_LEN;
+            
+            for (int j = 0; j < listReply->elements; ++j) {
+                string nameOfNeighbor = string(listReply->element[j]->str);
+                Particle *neighbor = createParticleForUser(nameOfNeighbor, getWindowCenter() + r);
+                mLinks.push_back(make_pair(center, neighbor));
+                
+                r.rotate(2 * M_PI / listReply->elements);
+            }
+            freeReplyObject(listReply);
+        }
+    }
+    freeReplyObject(userReply);
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -153,7 +170,7 @@ Particle *SocialNetworkVisualization::createParticleForUser(string name, Vec2f p
         mParticleSystem.addParticle(particle);
         map[name] = particle;
     }
-    particle->_info = getInfoForUser(name);
+    particle->info() = getInfoForUser(name);
     return particle;
 }
 
@@ -177,6 +194,34 @@ unordered_map<string, string> SocialNetworkVisualization::getInfoForUser(string 
     
     freeReplyObject(infoReply);
     return info;
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////
+// Greate the GUI for type-in updates
+void SocialNetworkVisualization::createGui() {
+    mParams = params::InterfaceGl::create(getWindow(), "UPDATE", toPixels(Vec2i(190,88)), ColorA(0.5f,0.5f,0.5f,0.8f));
+    mParams->addParam("USERNAME: @", &mSearchKey );
+    mParams->addButton("OK", std::bind( &SocialNetworkVisualization::issueUpdate, this));
+    mParams->addText("text", "label=`  `");
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////
+// Issue the update requested from the type-in GUI
+void SocialNetworkVisualization::issueUpdate() {
+    if (map.count(mSearchKey) > 0) {
+        redisUpdate(mSearchKey);
+    }
+    else {
+        string str = mSearchKey + " is not in the network.";
+        mParams->setOptions("text", "label=`" + str + "`");
+    }
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////
+// Delete all the data in Redis
+void SocialNetworkVisualization::redisFlush() {
+    redisReply* updateReply = (redisReply*)redisCommand(redis, "FLUSHDB");
+    freeReplyObject(updateReply);
 }
 
 CINDER_APP_NATIVE(SocialNetworkVisualization, RendererGl)

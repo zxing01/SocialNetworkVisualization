@@ -8,35 +8,45 @@
 
 #include "ParticleSystem.h"
 
-ParticleSystem::~ParticleSystem()
-{
-    for( std::vector<Particle*>::iterator it = particles.begin(); it != particles.end(); ++it )
-    {
+////////////////////////////////////////////////////////////////////////////////////////////////
+// Destructor - delete all the particles
+ParticleSystem::~ParticleSystem() {
+    for(auto it = _particles.begin(); it != _particles.end(); ++it)
         delete *it;
-    }
-    particles.clear();
+    _particles.clear();
 }
-void ParticleSystem::update()
-{
-    for( std::vector<Particle*>::iterator it = particles.begin(); it != particles.end(); ++it )
-    {
+
+////////////////////////////////////////////////////////////////////////////////////////////////
+// Update all the particles by calling update() on each one
+void ParticleSystem::update() {
+    for(auto it = _particles.begin(); it != _particles.end(); ++it)
         (*it)->update();
-    }
 }
-void ParticleSystem::draw()
-{
-    for( std::vector<Particle*>::iterator it = particles.begin(); it != particles.end(); ++it )
-    {
+
+////////////////////////////////////////////////////////////////////////////////////////////////
+// Render all the particles by calling draw() on each one
+void ParticleSystem::draw() {
+    for(auto it = _particles.begin(); it != _particles.end(); ++it) {
         (*it)->draw();
     }
 }
-void ParticleSystem::addParticle(Particle* particle)
-{
-    particles.push_back( particle );
+
+////////////////////////////////////////////////////////////////////////////////////////////////
+// Add a particle to the system
+void ParticleSystem::addParticle(Particle* particle) {
+    _particles.push_back(particle);
 }
-void ParticleSystem::destroyParticle(Particle* particle)
-{
-    std::vector<Particle*>::iterator it = std::find( particles.begin(), particles.end(), particle );
+
+////////////////////////////////////////////////////////////////////////////////////////////////
+// Remove a particle to the system
+void ParticleSystem::destroyParticle(Particle* particle) {
+    auto it = std::find(_particles.begin(), _particles.end(), particle);
     delete *it;
-    particles.erase( it );
+    _particles.erase(it);
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////
+// Access the particles
+std::vector<Particle*>& ParticleSystem::particles() {
+    return _particles;
 }
