@@ -99,7 +99,7 @@ void Particle::update() {
     Vec2f totalForce = _force - vel * _resistance + gravity;
     
     _prevPosition = _currPosition;
-    _currPosition += (vel +  totalForce / _mass); // time is 1
+    _currPosition += (vel + totalForce / _mass);
     
     _force = Vec2f::zero();
     if(_color != ColorA(0.0f,0.0f,0.0f,1.0f))

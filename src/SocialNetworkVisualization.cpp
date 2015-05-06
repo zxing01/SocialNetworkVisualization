@@ -21,11 +21,13 @@ SocialNetworkVisualization::~SocialNetworkVisualization() {
 // Download the adjacency list from the backend Redis database and save user info to Particles
 void SocialNetworkVisualization::setup() {
     vector<string> args = getArgs();
-    if (args.size() < 2)
-        cout << " Please give me a username.\n";
+    if (args.size() < 3 || args[1] != "-u") {
+        cout << "Please specify a username by '-u <username>'.\n";
+        exit(1);
+    }
     createGui();
-    connectRedis();
-    redisUpdate(args[1]);
+    redisConnect();
+    redisUpdate(args[2]);
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -153,7 +155,7 @@ void SocialNetworkVisualization::userUpdate() {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 // Connect to Redis database
-void SocialNetworkVisualization::connectRedis() {
+void SocialNetworkVisualization::redisConnect() {
     struct timeval timeout = { 1, 500000 }; // 1.5 seconds
     redis = redisConnectWithTimeout("127.0.0.1", 6379, timeout);
     if (redis == NULL || redis->err) {
@@ -163,7 +165,7 @@ void SocialNetworkVisualization::connectRedis() {
         } else {
             printf("Connection error: can't allocate redis context\n");
         }
-        exit(1);
+        exit(2);
     }
 }
 

@@ -34,14 +34,14 @@ public:
     void draw();
 
 private:
-    void connectRedis();
+    void redisConnect();
     void redisUpdate(string name);
-    void userUpdate();
-    void issueUpdate();
     void redisFlush();
+    void userUpdate();
+    void createGui();
+    void issueUpdate();
     Particle *createParticleForUser(string key, Vec2f position);
     unordered_map<string, string> getInfoForUser(string key);
-    void createGui();
     
     bool mIsHandle;
     Particle* mHandle;
